@@ -6,7 +6,7 @@
 #include <TimeLib.h>
 
 // moisture sensors Pins and values
-int senmoisture_pin_1 = A1; 
+int senmoisture_pin_1 = A1;
 int senmoisture_pin_2 = A2;
 float moisture_1;
 float moisture_2;
@@ -20,6 +20,9 @@ int temp_sensor_pin = 8;
 #define DHTTYPE DHT11
 DHT dht(temp_sensor_pin, DHTTYPE);
 int tempt_check_threshold = 2000;
+unsigned long prev_time = 0;
+float humidity = 0;
+float temp = 0;
 
 tmElements_t tm;
 
@@ -44,25 +47,62 @@ pinMode(led_pin_2, OUTPUT);
 }
 
 void loop() {
+  unsigned long current_time = millis();
 
   photoresistance_val = analogRead(photoresistance_pin);
 
   moisture_1 = analogRead(senmoisture_pin_1);
   moisture_2 = analogRead(senmoisture_pin_2);
-  
-  float humidity = dht.readHumidity();
-  float temp = dht.readTemperature();
 
+  if (current_time - prev_time >= tempt_check_threshold){
+    humidity = dht.readHumidity();
+    temp = dht.readTemperature();
+    prev_time = current_time;
+    }
+  
   lcd.setCursor(0,0);
+  lcd.print("Humedad");
+  lcd.setCursor(0,1);
   lcd.print(humidity);
+  lcd.setCursor(6,1);
+  lcd.print("%");
+  delay(750);
   for (int i = 0; i < 15; i++){
     lcd.scrollDisplayRight();
     delay(150);
     }
   lcd.clear();
-  lcd.setCursor(1,0);
-  lcd.print(temp);  
+  
+  lcd.setCursor(0,0);
+  lcd.print("Temperatura");
+  lcd.setCursor(0,1);
+  lcd.print(temp);
+  lcd.setCursor(6,1);
+  lcd.print("C");  
+  delay(750);
+  for (int i = 0; i < 15; i++){
+    lcd.scrollDisplayRight();
+    delay(150);
+    }
+  lcd.clear();
 
+// Displaying Time to lcd
+  if(RTC.read(tm)){
+    lcd.setCursor(0,0);  
+    lcd.print("Current Time");
+    lcd.setCursor(0,1);
+    print2digitsLCD(tm.Hour);
+    lcd.setCursor(2,1);
+    lcd.print(":");
+    lcd.setCursor(3,1);
+    print2digitsLCD(tm.Minute);
+    lcd.setCursor(5,1);
+    lcd.print(":");
+    lcd.setCursor(6,1);
+    print2digitsLCD(tm.Second);
+    delay(750);
+    lcd.clear();
+    }
   
   if (pin_state){
     digitalWrite(led_pin_1, HIGH);
@@ -74,7 +114,7 @@ void loop() {
     digitalWrite(led_pin_2, HIGH);
     pin_state = true;
       }
-      
+
   if(RTC.read(tm)){
     Serial.print("Time = ");
     print2digits(tm.Hour);
@@ -111,3 +151,12 @@ void print2digits(int number) {
   }
   Serial.print(number);
 }
+
+void print2digitsLCD(int number){
+  if (number >= 0 && number < 10){
+    String zero = "0";
+    lcd.print(zero + number);
+    }else{
+    lcd.print(number);
+      }
+  }
