@@ -1,3 +1,5 @@
+// librerias para el esencial
+
 #include <LiquidCrystal_I2C.h>
 #include <DS1307RTC.h >
 #include <DHT.h>
